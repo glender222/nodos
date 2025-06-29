@@ -2,41 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { type DijkstraResult } from '../models/GraphModel';
 
 interface PathFinderProps {
-  availableNodes: string[];
+  availableNodes: string[]; // Ahora representa las etiquetas de los nodos
+  nodeIdMap?: Record<string, string>; // Mapa de etiqueta -> ID
   onFindPath: (startNodeId: string, endNodeId: string) => DijkstraResult;
   onPathFound: (path: string[] | null, distance: number | null) => void;
 }
 
 const PathFinder: React.FC<PathFinderProps> = ({ 
   availableNodes, 
+  nodeIdMap,
   onFindPath,
   onPathFound
 }) => {
-  const [startNodeId, setStartNodeId] = useState<string>('');
-  const [endNodeId, setEndNodeId] = useState<string>('');
+  const [startNodeLabel, setStartNodeLabel] = useState<string>('');
+  const [endNodeLabel, setEndNodeLabel] = useState<string>('');
   const [pathDistance, setPathDistance] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const hasNodes = availableNodes.length > 0;
 
   const findShortestPath = () => {
-    if (!startNodeId || !endNodeId) {
+    if (!startNodeLabel || !endNodeLabel) {
       setErrorMessage('Selecciona los nodos de inicio y fin');
       return;
     }
 
-    if (startNodeId === endNodeId) {
+    if (startNodeLabel === endNodeLabel) {
       setErrorMessage('Los nodos de inicio y fin deben ser diferentes');
       return;
     }
 
     try {
-      // Ejecutar el algoritmo de Dijkstra
+      // Convertir etiquetas a IDs si existe el mapa, o usar las etiquetas como IDs si no existe
+      const startNodeId = nodeIdMap ? nodeIdMap[startNodeLabel] : startNodeLabel;
+      const endNodeId = nodeIdMap ? nodeIdMap[endNodeLabel] : endNodeLabel;
+      
+      if (!startNodeId || !endNodeId) {
+        setErrorMessage('No se pueden encontrar los IDs de los nodos seleccionados');
+        return;
+      }
+
+      // Ejecutar el algoritmo de Dijkstra con los IDs correctos
       const result = onFindPath(startNodeId, endNodeId);
       
       if (!result.path) {
-        setErrorMessage(`No existe un camino desde ${startNodeId} hasta ${endNodeId}`);
-        onPathFound(null, null); // Corregido: ahora ambos son null cuando no hay camino
+        setErrorMessage(`No existe un camino desde ${startNodeLabel} hasta ${endNodeLabel}`);
+        onPathFound(null, null);
         setPathDistance(null);
         return;
       }
@@ -52,15 +63,15 @@ const PathFinder: React.FC<PathFinderProps> = ({
 
   // Limpiar el estado cuando cambian los nodos disponibles
   useEffect(() => {
-    if (!availableNodes.includes(startNodeId)) {
-      setStartNodeId('');
+    if (!availableNodes.includes(startNodeLabel)) {
+      setStartNodeLabel('');
     }
-    if (!availableNodes.includes(endNodeId)) {
-      setEndNodeId('');
+    if (!availableNodes.includes(endNodeLabel)) {
+      setEndNodeLabel('');
     }
-    if (startNodeId === '' || endNodeId === '') {
+    if (startNodeLabel === '' || endNodeLabel === '') {
       setPathDistance(null);
-      onPathFound(null, null); // Corregido: ahora ambos son null cuando se resetea
+      onPathFound(null, null);
     }
   }, [availableNodes]);
 
@@ -76,13 +87,13 @@ const PathFinder: React.FC<PathFinderProps> = ({
             <label>
               Nodo Inicial:
               <select 
-                value={startNodeId} 
-                onChange={(e) => setStartNodeId(e.target.value)}
+                value={startNodeLabel} 
+                onChange={(e) => setStartNodeLabel(e.target.value)}
               >
                 <option value="">Selecciona un nodo</option>
-                {availableNodes.map(id => (
-                  <option key={`start-${id}`} value={id}>
-                    {id}
+                {availableNodes.map(label => (
+                  <option key={`start-${label}`} value={label}>
+                    {label}
                   </option>
                 ))}
               </select>
@@ -93,16 +104,16 @@ const PathFinder: React.FC<PathFinderProps> = ({
             <label>
               Nodo Final:
               <select 
-                value={endNodeId} 
-                onChange={(e) => setEndNodeId(e.target.value)}
-                disabled={!startNodeId}
+                value={endNodeLabel} 
+                onChange={(e) => setEndNodeLabel(e.target.value)}
+                disabled={!startNodeLabel}
               >
                 <option value="">Selecciona un nodo</option>
                 {availableNodes
-                  .filter(id => id !== startNodeId)
-                  .map(id => (
-                    <option key={`end-${id}`} value={id}>
-                      {id}
+                  .filter(label => label !== startNodeLabel)
+                  .map(label => (
+                    <option key={`end-${label}`} value={label}>
+                      {label}
                     </option>
                   ))
                 }
@@ -113,7 +124,7 @@ const PathFinder: React.FC<PathFinderProps> = ({
           <button 
             className="control-btn primary-btn" 
             onClick={findShortestPath}
-            disabled={!startNodeId || !endNodeId}
+            disabled={!startNodeLabel || !endNodeLabel}
           >
             🔍 Encontrar Camino Más Corto
           </button>

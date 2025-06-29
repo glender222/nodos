@@ -138,6 +138,16 @@ const App: React.FC = () => {
     setPathDistance(distance);
   }, []);
 
+  const createLabelToIdMap = useCallback((): Record<string, string> => {
+  const map: Record<string, string> = {};
+  Object.keys(graph.nodes).forEach(id => {
+    map[graph.nodes[id].label] = id;
+     });
+    return map;
+   }, [graph.nodes]);
+
+
+
   return (
     <div className="app">
       <header>
@@ -163,10 +173,11 @@ const App: React.FC = () => {
             isAddingEdge={mode === 'addEdge'}
           />
           
-          <PathFinder
-            availableNodes={Object.keys(graph.nodes).map(id => graph.nodes[id].label)} // Modificado: Ahora envía las etiquetas en lugar de los IDs
-            onFindPath={handleFindPath}
-            onPathFound={handlePathFound}
+         <PathFinder
+           availableNodes={Object.keys(graph.nodes).map(id => graph.nodes[id].label)}
+           nodeIdMap={createLabelToIdMap()}
+           onFindPath={handleFindPath}
+           onPathFound={handlePathFound}
           />
           
           <div className="instructions">
