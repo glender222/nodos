@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { type DijkstraResult } from '../models/GraphModel';
 
 interface PathFinderProps {
-  availableNodes: string[]; // Ahora representa las etiquetas de los nodos
-  nodeIdMap?: Record<string, string>; // Mapa de etiqueta -> ID
+  availableNodes: string[]; // Representa las etiquetas de los nodos
+  nodeIdMap: Record<string, string>; // Mapa de etiqueta -> ID
   onFindPath: (startNodeId: string, endNodeId: string) => DijkstraResult;
   onPathFound: (path: string[] | null, distance: number | null) => void;
 }
@@ -21,6 +21,7 @@ const PathFinder: React.FC<PathFinderProps> = ({
 
   const hasNodes = availableNodes.length > 0;
 
+  // Función para traducir las etiquetas a IDs antes de buscar el camino
   const findShortestPath = () => {
     if (!startNodeLabel || !endNodeLabel) {
       setErrorMessage('Selecciona los nodos de inicio y fin');
@@ -33,9 +34,9 @@ const PathFinder: React.FC<PathFinderProps> = ({
     }
 
     try {
-      // Convertir etiquetas a IDs si existe el mapa, o usar las etiquetas como IDs si no existe
-      const startNodeId = nodeIdMap ? nodeIdMap[startNodeLabel] : startNodeLabel;
-      const endNodeId = nodeIdMap ? nodeIdMap[endNodeLabel] : endNodeLabel;
+      // Obtener los IDs internos a partir de las etiquetas
+      const startNodeId = nodeIdMap[startNodeLabel];
+      const endNodeId = nodeIdMap[endNodeLabel];
       
       if (!startNodeId || !endNodeId) {
         setErrorMessage('No se pueden encontrar los IDs de los nodos seleccionados');
@@ -63,17 +64,17 @@ const PathFinder: React.FC<PathFinderProps> = ({
 
   // Limpiar el estado cuando cambian los nodos disponibles
   useEffect(() => {
-    if (!availableNodes.includes(startNodeLabel)) {
+    if (availableNodes.length > 0 && !availableNodes.includes(startNodeLabel)) {
       setStartNodeLabel('');
     }
-    if (!availableNodes.includes(endNodeLabel)) {
+    if (availableNodes.length > 0 && !availableNodes.includes(endNodeLabel)) {
       setEndNodeLabel('');
     }
     if (startNodeLabel === '' || endNodeLabel === '') {
       setPathDistance(null);
       onPathFound(null, null);
     }
-  }, [availableNodes]);
+  }, [availableNodes, startNodeLabel, endNodeLabel, onPathFound]);
 
   return (
     <div className="control-panel">

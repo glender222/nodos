@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import './App.css';
 import GraphCanvas from './components/GraphCanvas';
 import NodeControls from './components/NodeControls';
@@ -24,6 +24,20 @@ const App: React.FC = () => {
   const [pendingNodePosition, setPendingNodePosition] = useState<Position | null>(null);
   const [nextDefaultName, setNextDefaultName] = useState<string>('');
   const [nodeNameError, setNodeNameError] = useState<string>('');
+  
+  // Crear un mapa de etiquetas a IDs de nodos
+  const nodeLabelToIdMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    Object.entries(graph.nodes).forEach(([id, node]) => {
+      map[node.label] = id;
+    });
+    return map;
+  }, [graph.nodes]);
+  
+  // Obtener etiquetas de nodos disponibles
+  const availableNodeLabels = useMemo(() => {
+    return Object.values(graph.nodes).map(node => node.label);
+  }, [graph.nodes]);
   
   // Actualización del grafo cuando cambia el modelo
   const updateGraph = useCallback(() => {
@@ -140,6 +154,7 @@ const App: React.FC = () => {
 
   // Manejador para encontrar el camino más corto
   const handleFindPath = useCallback((startNodeId: string, endNodeId: string): DijkstraResult => {
+    // Esta función ahora recibe IDs correctos gracias al mapa
     return graphModel.findShortestPath(startNodeId, endNodeId);
   }, [graphModel]);
 
@@ -220,7 +235,8 @@ const App: React.FC = () => {
           />
           
           <PathFinder
-            availableNodes={Object.keys(graph.nodes).map(id => graph.nodes[id].label)}
+            availableNodes={availableNodeLabels}
+            nodeIdMap={nodeLabelToIdMap}
             onFindPath={handleFindPath}
             onPathFound={handlePathFound}
           />
@@ -241,7 +257,7 @@ const App: React.FC = () => {
               <h3>Resultado</h3>
               <div className="path-display">
                 <div className="path-nodes">
-                  {highlightedPath.map(nodeId => graph.nodes[nodeId].label).join(' → ')}
+                  {highlightedPath.map(nodeId => graph.nodes[nodeId]?.label || nodeId).join(' → ')}
                 </div>
                 <div className="path-distance">
                   Distancia total: <strong>{pathDistance.toFixed(2)}</strong>
