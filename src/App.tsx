@@ -15,7 +15,7 @@ const App: React.FC = () => {
   // Estados de la interfaz
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [highlightedPath, setHighlightedPath] = useState<string[] | null>(null);
-  const [pathDistance, setPathDistance] = useState<number>(0);
+  const [pathDistance, setPathDistance] = useState<number | null>(null);
   const [mode, setMode] = useState<'view' | 'addNode' | 'addEdge'>('view');
   
   // Estados para el diálogo de nombre de nodo
@@ -133,7 +133,7 @@ const App: React.FC = () => {
   }, [graphModel]);
 
   // Manejador para el camino encontrado
-  const handlePathFound = useCallback((path: string[] | null, distance: number) => {
+  const handlePathFound = useCallback((path: string[] | null, distance: number | null) => {
     setHighlightedPath(path);
     setPathDistance(distance);
   }, []);
@@ -164,7 +164,7 @@ const App: React.FC = () => {
           />
           
           <PathFinder
-            availableNodes={Object.keys(graph.nodes)}
+            availableNodes={Object.keys(graph.nodes).map(id => graph.nodes[id].label)} // Modificado: Ahora envía las etiquetas en lugar de los IDs
             onFindPath={handleFindPath}
             onPathFound={handlePathFound}
           />
@@ -179,12 +179,12 @@ const App: React.FC = () => {
             </ol>
           </div>
           
-          {highlightedPath && (
+          {highlightedPath && pathDistance !== null && (
             <div className="path-result">
               <h3>Resultado</h3>
               <div className="path-display">
                 <div className="path-nodes">
-                  {highlightedPath.join(' → ')}
+                  {highlightedPath.map(nodeId => graph.nodes[nodeId].label).join(' → ')}
                 </div>
                 <div className="path-distance">
                   Distancia total: <strong>{pathDistance.toFixed(2)}</strong>

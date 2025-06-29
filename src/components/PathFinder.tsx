@@ -4,7 +4,7 @@ import { type DijkstraResult } from '../models/GraphModel';
 interface PathFinderProps {
   availableNodes: string[];
   onFindPath: (startNodeId: string, endNodeId: string) => DijkstraResult;
-  onPathFound: (path: string[] | null, distance: number) => void;
+  onPathFound: (path: string[] | null, distance: number | null) => void;
 }
 
 const PathFinder: React.FC<PathFinderProps> = ({ 
@@ -36,7 +36,7 @@ const PathFinder: React.FC<PathFinderProps> = ({
       
       if (!result.path) {
         setErrorMessage(`No existe un camino desde ${startNodeId} hasta ${endNodeId}`);
-        onPathFound(null, 0);
+        onPathFound(null, null); // Corregido: ahora ambos son null cuando no hay camino
         setPathDistance(null);
         return;
       }
@@ -60,7 +60,7 @@ const PathFinder: React.FC<PathFinderProps> = ({
     }
     if (startNodeId === '' || endNodeId === '') {
       setPathDistance(null);
-      onPathFound(null, 0);
+      onPathFound(null, null); // Corregido: ahora ambos son null cuando se resetea
     }
   }, [availableNodes]);
 
