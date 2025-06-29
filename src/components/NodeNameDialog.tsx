@@ -5,13 +5,15 @@ interface NodeNameDialogProps {
   onClose: () => void;
   onConfirm: (name: string) => void;
   defaultName: string;
+  error?: string; // Nueva prop para mostrar el error
 }
 
 const NodeNameDialog: React.FC<NodeNameDialogProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  defaultName
+  defaultName,
+  error
 }) => {
   const [nodeName, setNodeName] = useState<string>(defaultName);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,7 +28,11 @@ const NodeNameDialog: React.FC<NodeNameDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = nodeName.trim();
-    onConfirm(trimmedName || defaultName);
+    if (trimmedName) {
+      onConfirm(trimmedName);
+    } else {
+      onConfirm(defaultName);
+    }
   };
 
   if (!isOpen) return null;
@@ -43,6 +49,10 @@ const NodeNameDialog: React.FC<NodeNameDialogProps> = ({
             onChange={(e) => setNodeName(e.target.value)}
             placeholder="Introduce nombre del nodo"
           />
+          
+          {/* Mostrar mensaje de error si existe */}
+          {error && <p className="error-message">{error}</p>}
+          
           <div className="dialog-buttons">
             <button type="button" onClick={onClose}>Cancelar</button>
             <button type="submit">Aceptar</button>

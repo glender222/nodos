@@ -381,3 +381,13 @@ footer {
   }
 }
 
+/* Estilo para mensajes de error en diálogos */
+.error-message {
+  color: #f38ba8;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(243, 139, 168, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid #f38ba8;
+}

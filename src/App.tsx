@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [pendingNodePosition, setPendingNodePosition] = useState<Position | null>(null);
   const [nextDefaultName, setNextDefaultName] = useState<string>('');
+  const [nodeNameError, setNodeNameError] = useState<string>(''); // Nuevo estado para el error
   
   // Actualización del grafo cuando cambia el modelo
   const updateGraph = useCallback(() => {
@@ -50,17 +51,26 @@ const App: React.FC = () => {
       // En lugar de crear el nodo inmediatamente, mostramos el diálogo
       setPendingNodePosition(position);
       setIsDialogOpen(true);
+      setNodeNameError(''); // Limpiar cualquier error previo
     }
   }, [mode]);
 
   // Manejador para confirmar la creación del nodo con el nombre especificado
   const handleConfirmNodeName = useCallback((name: string) => {
     if (pendingNodePosition) {
-      const nodeId = graphModel.addNode(pendingNodePosition, name);
-      updateGraph();
-      setSelectedNodeId(nodeId);
-      setIsDialogOpen(false);
-      setPendingNodePosition(null);
+      // Verificar si ya existe un nodo con ese nombre
+      if (graphModel.hasNodeWithLabel(name)) {
+        // Mostrar mensaje de error y mantener el diálogo abierto
+        setNodeNameError("El nombre ya existe. Por favor, use un nombre diferente.");
+      } else {
+        // Si el nombre es único, crear el nodo
+        const nodeId = graphModel.addNode(pendingNodePosition, name);
+        updateGraph();
+        setSelectedNodeId(nodeId);
+        setIsDialogOpen(false);
+        setPendingNodePosition(null);
+        setNodeNameError('');
+      }
     }
   }, [pendingNodePosition, graphModel, updateGraph]);
 
@@ -68,6 +78,7 @@ const App: React.FC = () => {
   const handleCancelNodeName = useCallback(() => {
     setIsDialogOpen(false);
     setPendingNodePosition(null);
+    setNodeNameError('');
   }, []);
 
   // Manejador para actualizar la posición de un nodo
@@ -201,6 +212,7 @@ const App: React.FC = () => {
         onClose={handleCancelNodeName}
         onConfirm={handleConfirmNodeName}
         defaultName={nextDefaultName}
+        error={nodeNameError} // Pasar el mensaje de error al diálogo
       />
       
       <footer>

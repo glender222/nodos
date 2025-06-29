@@ -58,6 +58,13 @@ export class GraphModel {
     return id;
   }
 
+  // Método nuevo para verificar si ya existe un nodo con la etiqueta dada
+  hasNodeWithLabel(label: string): boolean {
+    return Object.values(this.graph.nodes).some(node => 
+      node.label.toLowerCase() === label.toLowerCase()
+    );
+  }
+
   removeNode(id: string): void {
     // Eliminar el nodo
     delete this.graph.nodes[id];
