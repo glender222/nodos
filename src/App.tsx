@@ -4,6 +4,7 @@ import GraphCanvas from './components/GraphCanvas';
 import NodeControls from './components/NodeControls';
 import EdgeControls from './components/EdgeControls';
 import PathFinder from './components/PathFinder';
+import NodeNameDialog from './components/NodeNameDialog';
 import { GraphModel, type Position, type DijkstraResult } from './models/GraphModel';
 
 const App: React.FC = () => {
@@ -16,6 +17,11 @@ const App: React.FC = () => {
   const [highlightedPath, setHighlightedPath] = useState<string[] | null>(null);
   const [pathDistance, setPathDistance] = useState<number>(0);
   const [mode, setMode] = useState<'view' | 'addNode' | 'addEdge'>('view');
+  
+  // Estados para el diálogo de nombre de nodo
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [pendingNodePosition, setPendingNodePosition] = useState<Position | null>(null);
+  const [nextDefaultName, setNextDefaultName] = useState<string>('');
   
   // Actualización del grafo cuando cambia el modelo
   const updateGraph = useCallback(() => {
@@ -31,17 +37,38 @@ const App: React.FC = () => {
       // Activar modo de añadir nodo
       setMode('addNode');
       setSelectedNodeId(null);
+      
+      // Preparar el siguiente nombre predeterminado
+      const nodeCount = Object.keys(graphModel.getGraph().nodes).length;
+      setNextDefaultName(`Nodo ${nodeCount + 1}`);
     }
-  }, [mode]);
+  }, [mode, graphModel]);
 
   // Manejador para el clic en el canvas
   const handleCanvasClick = useCallback((position: Position) => {
     if (mode === 'addNode') {
-      const nodeId = graphModel.addNode(position);
+      // En lugar de crear el nodo inmediatamente, mostramos el diálogo
+      setPendingNodePosition(position);
+      setIsDialogOpen(true);
+    }
+  }, [mode]);
+
+  // Manejador para confirmar la creación del nodo con el nombre especificado
+  const handleConfirmNodeName = useCallback((name: string) => {
+    if (pendingNodePosition) {
+      const nodeId = graphModel.addNode(pendingNodePosition, name);
       updateGraph();
       setSelectedNodeId(nodeId);
+      setIsDialogOpen(false);
+      setPendingNodePosition(null);
     }
-  }, [mode, graphModel, updateGraph]);
+  }, [pendingNodePosition, graphModel, updateGraph]);
+
+  // Manejador para cancelar la creación del nodo
+  const handleCancelNodeName = useCallback(() => {
+    setIsDialogOpen(false);
+    setPendingNodePosition(null);
+  }, []);
 
   // Manejador para actualizar la posición de un nodo
   const handleNodePositionChange = useCallback((nodeId: string, position: Position) => {
@@ -168,6 +195,13 @@ const App: React.FC = () => {
           />
         </main>
       </div>
+      
+      <NodeNameDialog
+        isOpen={isDialogOpen}
+        onClose={handleCancelNodeName}
+        onConfirm={handleConfirmNodeName}
+        defaultName={nextDefaultName}
+      />
       
       <footer>
         <p>Visualizador de Grafos con Algoritmo de Dijkstra - {new Date().getFullYear()} | Por glender222</p>

@@ -288,3 +288,96 @@ footer {
     min-height: 400px;
   }
 }
+
+/* Agregar al final del archivo src/App.css */
+
+.node-name-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.node-name-dialog {
+  background-color: #313244;
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 300px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: dialog-appear 0.3s ease-out;
+}
+
+.node-name-dialog h3 {
+  margin-top: 0;
+  color: #cba6f7;
+  text-align: center;
+}
+
+.node-name-dialog input {
+  display: block;
+  width: 100%;
+  padding: 0.8rem;
+  margin: 1rem 0;
+  border: 1px solid #44475a;
+  border-radius: 6px;
+  background-color: #1e1e2e;
+  color: #cdd6f4;
+  font-size: 1rem;
+}
+
+.node-name-dialog input:focus {
+  border-color: #89b4fa;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.3);
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.dialog-buttons button {
+  flex: 1;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dialog-buttons button:first-child {
+  background-color: #45475a;
+  color: #cdd6f4;
+}
+
+.dialog-buttons button:last-child {
+  background-color: #a6e3a1;
+  color: #1e1e2e;
+}
+
+.dialog-buttons button:hover {
+  transform: translateY(-1px);
+  filter: brightness(110%);
+}
+
+@keyframes dialog-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
