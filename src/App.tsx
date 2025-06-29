@@ -5,11 +5,12 @@ import NodeControls from './components/NodeControls';
 import EdgeControls from './components/EdgeControls';
 import PathFinder from './components/PathFinder';
 import NodeNameDialog from './components/NodeNameDialog';
+import GraphTypeToggle from './components/GraphTypeTogggle';
 import { GraphModel, type Position, type DijkstraResult } from './models/GraphModel';
 
 const App: React.FC = () => {
   // Estado del modelo de grafo
-  const [graphModel] = useState<GraphModel>(() => new GraphModel());
+  const [graphModel] = useState<GraphModel>(() => new GraphModel(false)); // Por defecto bidireccional
   const [graph, setGraph] = useState(graphModel.getGraph());
   
   // Estados de la interfaz
@@ -22,12 +23,21 @@ const App: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [pendingNodePosition, setPendingNodePosition] = useState<Position | null>(null);
   const [nextDefaultName, setNextDefaultName] = useState<string>('');
-  const [nodeNameError, setNodeNameError] = useState<string>(''); // Nuevo estado para el error
+  const [nodeNameError, setNodeNameError] = useState<string>('');
   
   // Actualización del grafo cuando cambia el modelo
   const updateGraph = useCallback(() => {
     setGraph({...graphModel.getGraph()});
   }, [graphModel]);
+  
+  // Manejador para cambiar entre grafo direccional y bidireccional
+  const handleToggleDirected = useCallback((isDirected: boolean) => {
+    graphModel.setDirected(isDirected);
+    // Limpiar el camino destacado al cambiar de modo
+    setHighlightedPath(null);
+    setPathDistance(null);
+    updateGraph();
+  }, [graphModel, updateGraph]);
   
   // Manejador para añadir un nodo
   const handleAddNode = useCallback(() => {
@@ -97,6 +107,7 @@ const App: React.FC = () => {
       // Si hay un camino destacado que incluye este nodo, limpiarlo
       if (highlightedPath?.includes(selectedNodeId)) {
         setHighlightedPath(null);
+        setPathDistance(null);
       }
     }
   }, [selectedNodeId, graphModel, updateGraph, highlightedPath]);
@@ -138,18 +149,48 @@ const App: React.FC = () => {
     setPathDistance(distance);
   }, []);
 
-  const createLabelToIdMap = useCallback((): Record<string, string> => {
-  const map: Record<string, string> = {};
-  Object.keys(graph.nodes).forEach(id => {
-    map[graph.nodes[id].label] = id;
-     });
-    return map;
-   }, [graph.nodes]);
-
-
+  // Agregar estilos CSS adicionales para los botones de alternancia
+  const additionalStyles = `
+    .toggle-container {
+      display: flex;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    
+    .toggle-btn {
+      flex: 1;
+      padding: 10px;
+      background-color: #45475a;
+      color: #cdd6f4;
+      transition: all 0.2s ease;
+    }
+    
+    .toggle-btn:first-child {
+      border-radius: 6px 0 0 6px;
+      border-right: 1px solid #282c34;
+    }
+    
+    .toggle-btn:last-child {
+      border-radius: 0 6px 6px 0;
+      border-left: 1px solid #282c34;
+    }
+    
+    .toggle-btn.active {
+      background-color: #89b4fa;
+      color: #1e1e2e;
+      font-weight: 500;
+    }
+    
+    .hint {
+      font-size: 0.85rem;
+      opacity: 0.8;
+      margin-top: 5px;
+    }
+  `;
 
   return (
     <div className="app">
+      <style>{additionalStyles}</style>
       <header>
         <h1>Visualizador de Grafos - Algoritmo de Dijkstra</h1>
         <div className="subtitle">Crea, conecta y encuentra el camino más corto</div>
@@ -157,6 +198,11 @@ const App: React.FC = () => {
       
       <div className="main-content">
         <aside className="sidebar">
+          <GraphTypeToggle 
+            isDirected={graph.isDirected}
+            onToggle={handleToggleDirected}
+          />
+
           <NodeControls
             onAddNode={handleAddNode}
             onRemoveNode={handleRemoveNode}
@@ -173,16 +219,16 @@ const App: React.FC = () => {
             isAddingEdge={mode === 'addEdge'}
           />
           
-         <PathFinder
-           availableNodes={Object.keys(graph.nodes).map(id => graph.nodes[id].label)}
-           nodeIdMap={createLabelToIdMap()}
-           onFindPath={handleFindPath}
-           onPathFound={handlePathFound}
+          <PathFinder
+            availableNodes={Object.keys(graph.nodes).map(id => graph.nodes[id].label)}
+            onFindPath={handleFindPath}
+            onPathFound={handlePathFound}
           />
           
           <div className="instructions">
             <h3>Instrucciones</h3>
             <ol>
+              <li>Selecciona si quieres un grafo direccional o bidireccional</li>
               <li>Crea nodos haciendo clic en "Agregar Nodo" y después en el canvas</li>
               <li>Mueve nodos arrastrándolos en el modo vista</li>
               <li>Conecta nodos usando "Conectar Nodos" y seleccionándolos</li>
@@ -223,7 +269,7 @@ const App: React.FC = () => {
         onClose={handleCancelNodeName}
         onConfirm={handleConfirmNodeName}
         defaultName={nextDefaultName}
-        error={nodeNameError} // Pasar el mensaje de error al diálogo
+        error={nodeNameError}
       />
       
       <footer>

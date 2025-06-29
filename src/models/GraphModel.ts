@@ -20,6 +20,7 @@ export interface Edge {
 export interface Graph {
   nodes: Record<string, Node>;
   edges: Edge[];
+  isDirected: boolean; // Nueva propiedad para controlar la direccionalidad
 }
 
 export interface DijkstraResult {
@@ -33,15 +34,24 @@ export class GraphModel {
   private nextNodeId: number = 0;
   private nextEdgeId: number = 0;
 
-  constructor() {
+  constructor(isDirected: boolean = false) { // Ahora aceptamos la direccionalidad como parámetro
     this.graph = {
       nodes: {},
-      edges: []
+      edges: [],
+      isDirected: isDirected
     };
   }
 
   getGraph(): Graph {
     return this.graph;
+  }
+
+  setDirected(isDirected: boolean): void {
+    this.graph.isDirected = isDirected;
+  }
+
+  isDirected(): boolean {
+    return this.graph.isDirected;
   }
 
   addNode(position: Position, label?: string): string {
@@ -58,7 +68,6 @@ export class GraphModel {
     return id;
   }
 
-  // Método nuevo para verificar si ya existe un nodo con la etiqueta dada
   hasNodeWithLabel(label: string): boolean {
     return Object.values(this.graph.nodes).some(node => 
       node.label.toLowerCase() === label.toLowerCase()
@@ -92,14 +101,17 @@ export class GraphModel {
       throw new Error("No se pueden crear conexiones de un nodo a sí mismo");
     }
 
-    // Verificar que no exista ya una conexión
-    const existingEdge = this.graph.edges.find(
-      edge => (edge.source === source && edge.target === target) || 
-              (edge.source === target && edge.target === source)
-    );
+    // Verificar si ya existe la conexión
+    // La lógica cambia según si el grafo es direccional o no
+    const existingEdge = this.graph.isDirected 
+      ? this.graph.edges.find(edge => edge.source === source && edge.target === target)
+      : this.graph.edges.find(edge => 
+          (edge.source === source && edge.target === target) || 
+          (edge.source === target && edge.target === source)
+        );
 
     if (existingEdge) {
-      throw new Error("Ya existe una conexión entre estos nodos");
+      throw new Error("Ya existe una conexión entre estos nodos en esta dirección");
     }
 
     const id = `e${this.nextEdgeId++}`;
@@ -128,7 +140,8 @@ export class GraphModel {
   clear(): void {
     this.graph = {
       nodes: {},
-      edges: []
+      edges: [],
+      isDirected: this.graph.isDirected // Mantener el modo actual
     };
     this.nextNodeId = 0;
     this.nextEdgeId = 0;
@@ -188,10 +201,17 @@ function dijkstra(graph: Graph, startNodeId: string, endNodeId: string): Dijkstr
     // Marcar como visitado
     unvisited.delete(currentNodeId);
 
-    // Verificar los vecinos
-    const edges = graph.edges.filter(edge => 
-      edge.source === currentNodeId || edge.target === currentNodeId
-    );
+    // Verificar los vecinos, considerando la direccionalidad del grafo
+    let edges;
+    if (graph.isDirected) {
+      // En grafo direccional, solo considerar aristas que salen del nodo actual
+      edges = graph.edges.filter(edge => edge.source === currentNodeId);
+    } else {
+      // En grafo bidireccional, considerar todas las aristas conectadas al nodo
+      edges = graph.edges.filter(edge => 
+        edge.source === currentNodeId || edge.target === currentNodeId
+      );
+    }
 
     for (const edge of edges) {
       // Identificar el nodo vecino

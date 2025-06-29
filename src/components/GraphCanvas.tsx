@@ -98,11 +98,15 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
     const sourceIndex = highlightedPath.indexOf(edge.source);
     const targetIndex = highlightedPath.indexOf(edge.target);
     
-    return (
-      sourceIndex !== -1 && 
-      targetIndex !== -1 && 
-      Math.abs(sourceIndex - targetIndex) === 1
-    );
+    if (graph.isDirected) {
+      // En grafo direccional, verificar que el origen esté justo antes que el destino
+      return sourceIndex !== -1 && targetIndex !== -1 && targetIndex === sourceIndex + 1;
+    } else {
+      // En grafo bidireccional, verificar que sean adyacentes en cualquier orden
+      return sourceIndex !== -1 && 
+             targetIndex !== -1 && 
+             Math.abs(sourceIndex - targetIndex) === 1;
+    }
   };
 
   // Función para dibujar una línea curva entre nodos
@@ -148,6 +152,32 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
     };
   };
 
+  // Calcular las coordenadas de la flecha
+  const calculateArrowPoints = (sourcePos: Position, targetPos: Position): string => {
+    // Definir longitud y ancho de la punta de flecha
+    const arrowLength = 10;
+    const arrowWidth = 6;
+    
+    // Calcular el ángulo de la línea
+    const angle = Math.atan2(targetPos.y - sourcePos.y, targetPos.x - sourcePos.x);
+    
+    // Calcular la posición de la punta de flecha (un poco antes del nodo destino)
+    const nodeRadius = 20; // Radio aproximado del nodo
+    const distance = Math.sqrt(Math.pow(targetPos.x - sourcePos.x, 2) + Math.pow(targetPos.y - sourcePos.y, 2));
+    const ratio = (distance - nodeRadius) / distance;
+    
+    const tipX = sourcePos.x + (targetPos.x - sourcePos.x) * ratio;
+    const tipY = sourcePos.y + (targetPos.y - sourcePos.y) * ratio;
+    
+    // Calcular los puntos de la base de la flecha
+    const x1 = tipX - arrowLength * Math.cos(angle - Math.PI/6);
+    const y1 = tipY - arrowLength * Math.sin(angle - Math.PI/6);
+    const x2 = tipX - arrowLength * Math.cos(angle + Math.PI/6);
+    const y2 = tipY - arrowLength * Math.sin(angle + Math.PI/6);
+    
+    return `${tipX},${tipY} ${x1},${y1} ${x2},${y2}`;
+  };
+
   return (
     <div 
       className="graph-canvas"
@@ -182,6 +212,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
           
           const path = getEdgePath(sourceNode, targetNode);
           const labelPosition = getEdgeLabelPosition(sourceNode, targetNode);
+          const arrowPoints = graph.isDirected ? calculateArrowPoints(sourceNode.position, targetNode.position) : null;
           
           return (
             <g key={edge.id}>
@@ -191,6 +222,13 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
                 strokeWidth={highlighted ? 3 : 2}
                 fill="none"
               />
+              {/* Flecha para grafos direccionales */}
+              {graph.isDirected && arrowPoints && (
+                <polygon
+                  points={arrowPoints}
+                  fill={highlighted ? '#ff5252' : '#aaaaaa'}
+                />
+              )}
               <circle 
                 cx={labelPosition.x} 
                 cy={labelPosition.y} 

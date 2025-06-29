@@ -1,4 +1,3 @@
-
 import { type Graph } from '../models/GraphModel';
 
 export interface DijkstraResult {
@@ -41,14 +40,22 @@ export function dijkstra(graph: Graph, startNodeId: string, endNodeId: string): 
     // Marcar como visitado
     unvisited.delete(currentNodeId);
 
-    // Verificar los vecinos
-    const edges = graph.edges.filter(edge => 
-      edge.source === currentNodeId || edge.target === currentNodeId
-    );
+    // Verificar los vecinos, considerando la direccionalidad del grafo
+    let edges;
+    if (graph.isDirected) {
+      // En grafo direccional, solo considerar aristas que salen del nodo actual
+      edges = graph.edges.filter(edge => edge.source === currentNodeId);
+    } else {
+      // En grafo bidireccional, considerar todas las aristas conectadas al nodo
+      edges = graph.edges.filter(edge => 
+        edge.source === currentNodeId || edge.target === currentNodeId
+      );
+    }
 
     for (const edge of edges) {
-      // Identificar el nodo vecino
-      const neighborId = edge.source === currentNodeId ? edge.target : edge.source;
+      // Identificar el nodo vecino (en modo direccional siempre será el target)
+      const neighborId = graph.isDirected ? edge.target : 
+                         (edge.source === currentNodeId ? edge.target : edge.source);
       
       // Calcular posible nueva distancia
       const distance = distances[currentNodeId] + edge.weight;
